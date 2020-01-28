@@ -121,8 +121,6 @@ get_active_txns_key(Key, Partition) ->
             {ok, antidote_ets_txn_caches:get_prepared_txns_by_key(Partition, Key)}
     end.
 
-
-
 send_min_prepared(Partition) ->
     dc_utilities:call_local_vnode(Partition, clocksi_vnode_master, {send_min_prepared}).
 

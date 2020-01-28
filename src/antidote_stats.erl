@@ -171,6 +171,8 @@ update_processes_info(Monitored) ->
 
 
     %% fold over list, group by name
+    %% Sara_fold: this seems correct to me, accumulating is needed to create the map
+    %% Sara_fold: if registered_name is unique (except when it is 'undefined'), we can avoid the get before each put. 
     {QueueMap, ReductionsMap} = lists:foldl(
         fun({Name, Messages, Reductions}, {QMap, RMap}) ->
             {
