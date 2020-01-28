@@ -577,7 +577,7 @@ execute_command(read_objects, Objects, Sender, State = #state{transaction=Transa
         ReadKeys = AccState#state.return_accumulator,
         AccState#state{return_accumulator=[Key | ReadKeys]}
                    end,
-
+    %% Sara_fold: this seems correct 
     NewCoordState = lists:foldl(
         ExecuteReads,
         State#state{num_to_read = length(Objects), return_accumulator=[]},
@@ -605,7 +605,7 @@ execute_command(update_objects, UpdateOps, Sender, State = #state{transaction=Tr
                 }
         end
                      end,
-
+    %% Sara_fold: this seems correct 
     NewCoordState = lists:foldl(
         ExecuteUpdates,
         State#state{num_to_read=0, return_accumulator=ok},
