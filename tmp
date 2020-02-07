@@ -1,0 +1,19 @@
+Fast-forward
+ include/antidote.hrl            |   3 ---
+ src/antidote_ets_meta_data.erl  | 143 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/antidote_ets_txn_caches.erl | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/clocksi_readitem.erl        |  17 ++++++------
+ src/clocksi_vnode.erl           | 156 ++++++++++++++++++++++++++++++++++----------------------------------------------------------------------------
+ src/dc_utilities.erl            |  12 ---------
+ src/inter_dc_query.erl          |  45 +++++++++++++++++++++++++++-----
+ src/logging_vnode.erl           |  64 ++++++++++++++++++++++++++++++++-------------
+ src/materializer_vnode.erl      | 205 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------------------------------
+ src/meta_data_manager.erl       |   8 +++---
+ src/meta_data_sender.erl        |  62 ++++++++++++--------------------------------
+ src/stable_meta_data_server.erl |  75 ++++++++++++++++++++++++++++++++++++++++-------------
+ 12 files changed, 627 insertions(+), 288 deletions(-)
+ create mode 100644 src/antidote_ets_meta_data.erl
+ create mode 100644 src/antidote_ets_txn_caches.erl
+
+
+ 
