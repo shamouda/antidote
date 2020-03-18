@@ -179,9 +179,9 @@ load_buffer(Partition, From, To) ->
     end, OpList).
 
 open_log(Partition) ->
-    LogFile = integer_to_list(Partition),
-    LogId = LogFile ++ "--" ++ LogFile,
-    LogPath = filename:join(app_helper:get_env(riak_core, platform_data_dir), LogId),
+    LogId = integer_to_list(Partition) ++ "--" ++ integer_to_list(Partition),
+    {ok, DataDir} = application:get_env(antidote, data_dir),
+    LogPath = filename:join(DataDir, LogId),
     case disk_log:open([{name, LogPath}]) of
         {ok, Log} -> Log;
         {repaired, Log, _, _} -> Log;
