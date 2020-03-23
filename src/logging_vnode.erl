@@ -401,61 +401,56 @@ handle_command({append, LogId, LogOperation, Sync}, _Sender,
             MyDCID = dc_utilities:get_my_dc_id(),
             %% all operations update the per log, operation id
             OpId = get_op_id(OpIdTable, {LogId, MyDCID}),
-            case LogOperation#log_operation.op_type == update andalso (LogOperation#log_operation.log_payload)#update_log_payload.op == noop of
-                true ->
-                    {reply, {ok, OpId}, State};
-                false ->
-                    #op_number{local = Local, global = Global} = OpId,
-                    NewOpId = OpId#op_number{local =  Local + 1, global = Global + 1},
-                    true = update_ets_op_id({LogId, MyDCID}, NewOpId, OpIdTable),
-                    %% non commit operations update the bucket id number to keep track
-                    %% of the number of updates per bucket
-                    NewBucketOpId =
-                    case LogOperation#log_operation.op_type of
-                        update ->
-                            Bucket = (LogOperation#log_operation.log_payload)#update_log_payload.bucket,
-                            BOpId = get_op_id(OpIdTable, {LogId, Bucket, MyDCID}),
-                            #op_number{local = BLocal, global = BGlobal} = BOpId,
-                            NewBOpId = BOpId#op_number{local = BLocal + 1, global = BGlobal + 1},
-                            true = update_ets_op_id({LogId, Bucket, MyDCID}, NewBOpId, OpIdTable),
-                            NewBOpId;
-                        _ ->
-                             NewOpId
-                    end,
-                    LogRecord = #log_record{
-                        version = log_utilities:log_record_version(),
-                        op_number = NewOpId,
-                        bucket_op_number = NewBucketOpId,
-                        log_operation = LogOperation},
-                    Buffer = case LogOperation#log_operation.op_type of
-                        % we must retrieve the buffer before sending the commit to the log_sender_vnode!
-                        commit -> inter_dc_log_sender_vnode:get_buffer(Partition, LogOperation#log_operation.tx_id) ++ [LogRecord];
-                        _ -> []
-                    end,
-                    Response = case insert_log_record(Log, LogId, LogRecord, EnableLog) of
-                        {ok, NewOpId} ->
-                            inter_dc_log_sender_vnode:send(Partition, LogRecord),
-                            case Sync of
-                                true ->
-                                    case disk_log:sync(Log) of
-                                        ok ->
-                                            {reply, {ok, OpId}, State};
-                                        {error, Reason} ->
-                                            {reply, {error, Reason}, State}
-                                    end;
-                                false ->
-                                    {reply, {ok, OpId}, State}
-                            end;
+            #op_number{local = Local, global = Global} = OpId,
+            NewOpId = OpId#op_number{local =  Local + 1, global = Global + 1},
+            true = update_ets_op_id({LogId, MyDCID}, NewOpId, OpIdTable),
+            %% non commit operations update the bucket id number to keep track
+            %% of the number of updates per bucket
+            NewBucketOpId =
+            case LogOperation#log_operation.op_type of
+                update ->
+                    Bucket = (LogOperation#log_operation.log_payload)#update_log_payload.bucket,
+                    BOpId = get_op_id(OpIdTable, {LogId, Bucket, MyDCID}),
+                    #op_number{local = BLocal, global = BGlobal} = BOpId,
+                    NewBOpId = BOpId#op_number{local = BLocal + 1, global = BGlobal + 1},
+                    true = update_ets_op_id({LogId, Bucket, MyDCID}, NewBOpId, OpIdTable),
+                    NewBOpId;
+                _ ->
+                    NewOpId
+            end,
+            LogRecord = #log_record{
+              version = log_utilities:log_record_version(),
+              op_number = NewOpId,
+              bucket_op_number = NewBucketOpId,
+              log_operation = LogOperation},
+            Buffer = case LogOperation#log_operation.op_type of
+                % we must retrieve the buffer before sending the commit to the log_sender_vnode!
+                commit -> inter_dc_log_sender_vnode:get_buffer(Partition, LogOperation#log_operation.tx_id) ++ [LogRecord];
+                _ -> []
+            end,
+            Response = case insert_log_record(Log, LogId, LogRecord, EnableLog) of
+                {ok, NewOpId} ->
+                    inter_dc_log_sender_vnode:send(Partition, LogRecord),
+                    case Sync of
+                    true ->
+                        case disk_log:sync(Log) of
+                        ok ->
+                            {reply, {ok, OpId}, State};
                         {error, Reason} ->
                             {reply, {error, Reason}, State}
-                    end,
-                    case LogOperation#log_operation.op_type of
-                        commit ->
-                            ok = intra_dc_log_replication_vnode:replicate(Partition, Buffer);
-                        _ -> ok
-                    end,
-                    Response
-            end;
+                        end;
+                    false ->
+                        {reply, {ok, OpId}, State}
+                    end;
+                {error, Reason} ->
+                    {reply, {error, Reason}, State}
+            end,
+            case LogOperation#log_operation.op_type of
+                commit ->
+                    ok = intra_dc_log_replication_vnode:replicate(Partition, Buffer);
+                _ -> ok
+            end,
+            Response;
         {error, Reason} ->
             {reply, {error, Reason}, State}
     end;
