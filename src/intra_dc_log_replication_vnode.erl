@@ -25,9 +25,9 @@
 %% List of the contributors to the development of Antidote: see AUTHORS file.
 %% Description and complete License: see LICENSE file.
 %% -------------------------------------------------------------------
-%%
-%% This module is responsible for the logic and flow of the IntraDC
-%% replication.
+%% Gonçalo Cabrita's chain replication implementation:
+%%   This module is responsible for the logic and flow of the IntraDC
+%%   replication.
 
 -module(intra_dc_log_replication_vnode).
 -behaviour(riak_core_vnode).

@@ -25,12 +25,12 @@
 %% List of the contributors to the development of Antidote: see AUTHORS file.
 %% Description and complete License: see LICENSE file.
 %% -------------------------------------------------------------------
-%% This module is responsible for maintaining the cluster of consensus
-%% groups for each partition, and keeping track of the nodes that may
-%% have partitioned or crashed.
-%%
-%% When the riak core ring changes the cluster should automatically
-%% update as well.
+%% Gonçalo Cabrita's chain replication implementation:
+%%   This module is responsible for maintaining the cluster of consensus
+%%   groups for each partition, and keeping track of the nodes that may
+%%   have partitioned or crashed.
+%%   When the riak core ring changes the cluster should automatically
+%%   update as well.
 
 -module(intra_dc_leader_elector).
 -include_lib("kernel/include/logger.hrl").
