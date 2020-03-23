@@ -32,12 +32,14 @@
 -module(intra_dc_log_replication_vnode).
 -behaviour(riak_core_vnode).
 -include("antidote.hrl").
--include_lib("riak_core/include/riak_core_vnode.hrl").
+-include_lib("kernel/include/logger.hrl").
 
 %% External API
 -export([
     replicate/2
 ]).
+
+%%TODO: revise function filter_buffer and its use of antidote_ccrdt:is_type
 
 %% Internal API
 -export([
@@ -122,10 +124,18 @@ handle_overload_info(_, _) ->
 %%%% Private Functions
 
 % Runs the replication logic as the leader node
-txn(OriginalPartition, Buffer, State = #state{last_ops = CurrentOps}) ->
-    CurrentOp = maps:get(OriginalPartition, CurrentOps),
+txn(OriginalPartition, Buffer, State) ->
     Cluster = intra_dc_leader_elector:get_cluster(OriginalPartition),
-    [_Leader, TargetNode | TargetRemainingNodes] = maps:get(current, Cluster),
+    ReplicaGroup = maps:get(current, Cluster),
+    txn_internal(OriginalPartition, Buffer, ReplicaGroup, State).
+
+%% handling the case of no replication due to having only one node
+txn_internal(_OriginalPartition, _Buffer, [_Leader], State) ->
+	{reply, ok, State};
+%% handling the case of replication when we have more than one node in the cluster
+txn_internal(OriginalPartition, Buffer, ReplicaGroup, State = #state{last_ops = CurrentOps}) ->
+    [_Leader, TargetNode | TargetRemainingNodes] = ReplicaGroup,
+    CurrentOp = maps:get(OriginalPartition, CurrentOps),
     %% TODO: retry in case the call fails
     case riak_core_vnode_master:sync_command(TargetNode, {run_txn, OriginalPartition, TargetRemainingNodes, Buffer, CurrentOp}, intra_dc_log_replication_vnode_master) of
         ok -> ok;
@@ -227,9 +237,10 @@ filter_buffer(Buffer) ->
         case Operation#log_operation.op_type of
             update ->
                 Update = Operation#log_operation.log_payload,
-                Type = Update#update_log_payload.type,
-                Op = Update#update_log_payload.op,
-                not (antidote_ccrdt:is_type(Type) andalso Type:is_replicate_tagged(Op));
+                _Type = Update#update_log_payload.type,
+                _Op = Update#update_log_payload.op,
+                false;
+                %%%TODO: this does not work in the new code:::> not (antidote_ccrdt:is_type(Type) andalso Type:is_replicate_tagged(Op));
             _ -> true
         end
     end, Buffer).

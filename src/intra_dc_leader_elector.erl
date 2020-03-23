@@ -33,6 +33,7 @@
 %% update as well.
 
 -module(intra_dc_leader_elector).
+-include_lib("kernel/include/logger.hrl").
 -behaviour(gen_server).
 
 %% External API
@@ -59,6 +60,7 @@
 
 -define(HEARTBEAT_TIMER, 1000).
 -define(FAILURE_TIMER, 1500).
+-define(REPLICAS, 3).
 
 %% GenServer state
 -record(state, {
@@ -94,7 +96,7 @@ start_link() ->
     gen_server:start_link({global, generate_server_name(node())}, ?MODULE, [], []).
 
 init([]) ->
-    {ok, recompute_groups(3, #state{downed = [], heartbeat_timer = none, failure_timers = #{}})}.
+    {ok, recompute_groups(?REPLICAS, #state{downed = [], heartbeat_timer = none, failure_timers = #{}})}.
 
 handle_call(get_downed, _From, #state{downed = Downed} = State) ->
     {reply, Downed, State};
@@ -108,7 +110,7 @@ handle_call(_Info, _From, State) ->
     {reply, error, State}.
 
 handle_cast(ring_changed, State) ->
-    {noreply, recompute_groups(3, State)};
+    {noreply, recompute_groups(?REPLICAS, State)};
 handle_cast({heartbeat, Node}, State = #state{downed = Downed, partitions = Partitions}) ->
     case lists:member(Node, Downed) of
         true ->
@@ -187,11 +189,13 @@ get_downed() ->
 recompute_groups(N, State = #state{downed = Downed}) ->
     {ok, Ring} = riak_core_ring_manager:get_my_ring(),
     Cluster = riak_core_ring:all_members(Ring),
-    NN = case Cluster < 5 of
+    NN = case length(Cluster) < 5 of
         true -> 1;
         false -> N
     end,
     AllPrefs = riak_core_ring:all_preflists(Ring, NN),
+    %Partitions is a map where the key is a partition and the value is a map from
+    %an initial membership configuration to a current configuration
     Partitions = lists:foldl(fun([{Partition, Leader} | _] = Membership, Acc) ->
         FCurrent = lists:filter(fun({_P, MN}) -> not lists:member(MN, Downed) end, Membership),
         Current = case lists:member(Leader, Downed) of
