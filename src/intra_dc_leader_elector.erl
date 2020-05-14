@@ -186,10 +186,11 @@ run_failure(Node) ->
 get_downed() ->
     gen_server:call({global, generate_server_name(node())}, get_downed).
 
+%% Creates the initial replication groups for a replication factor of N
 recompute_groups(N, State = #state{downed = Downed}) ->
     {ok, Ring} = riak_core_ring_manager:get_my_ring(),
     Cluster = riak_core_ring:all_members(Ring),
-    NN = case length(Cluster) < 5 of
+    NN = case length(Cluster) < N of
         true -> 1;
         false -> N
     end,
