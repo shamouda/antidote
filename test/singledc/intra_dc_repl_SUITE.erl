@@ -72,6 +72,9 @@ all() -> [
     replication_test
 ].
 
+%% We have a data center of 3 physical nodes. In this test, we write a value to Node1, then kill it.
+%% Then we read the same value from Node2. If replication is correct the two values should be the same.
+%% After we recover Node1, we expect to read the same value from Node1. 
 replication_test(Config) ->
 	Bucket = ?BUCKET,
 	ct:pal("intra-DC replication test starting", []),
@@ -107,7 +110,8 @@ replication_test(Config) ->
     ?assertEqual(lists:all(fun(X) -> X == ClusterState2 end, Clusters2), true),
 
     % Apply read
-    {ok, [ReadResult], _} = rpc:call(hd(tl(Cluster)), antidote, read_objects, [ignore, [], [Object]]),
+    SecondNode = hd(tl(Cluster)),
+    {ok, [ReadResult], _} = rpc:call(SecondNode, antidote, read_objects, [ignore, [], [Object]]),
     ct:pal("ReadResult ~p must be 1", [ReadResult]),
     ?assertEqual(1, ReadResult),
 
