@@ -60,7 +60,7 @@
 
 -define(HEARTBEAT_TIMER, 1000).
 -define(FAILURE_TIMER, 1500).
--define(REPLICAS, 3).
+-define(DEFAULT_REPLICAS, 1).
 
 %% GenServer state
 -record(state, {
@@ -96,7 +96,8 @@ start_link() ->
     gen_server:start_link({global, generate_server_name(node())}, ?MODULE, [], []).
 
 init([]) ->
-    {ok, recompute_groups(?REPLICAS, #state{downed = [], heartbeat_timer = none, failure_timers = #{}})}.
+	Replicas = application:get_env(antidote, intra_dc_replicas, ?DEFAULT_REPLICAS),
+    {ok, recompute_groups(Replicas, #state{downed = [], heartbeat_timer = none, failure_timers = #{}})}.
 
 handle_call(get_downed, _From, #state{downed = Downed} = State) ->
     {reply, Downed, State};
@@ -110,7 +111,8 @@ handle_call(_Info, _From, State) ->
     {reply, error, State}.
 
 handle_cast(ring_changed, State) ->
-    {noreply, recompute_groups(?REPLICAS, State)};
+	Replicas = application:get_env(antidote, intra_dc_replicas, ?DEFAULT_REPLICAS),
+    {noreply, recompute_groups(Replicas, State)};
 handle_cast({heartbeat, Node}, State = #state{downed = Downed, partitions = Partitions}) ->
     case lists:member(Node, Downed) of
         true ->
