@@ -37,25 +37,24 @@
 
 %% Internal API
 -export([
-	get/1,
-	put/2
+	get/2,
+	put/3
     ]).
 
--define(BUCKET, test_utils:bucket(simple_kv_bucket)).
-
 %%%% External API
-get(Key) ->
+get(Bucket, Key) ->
 	?LOG_INFO("simple_kv.get called key = ~p", [Key]),
     ReqId = make_ref(),
-    send_to_one(Key, {get, ReqId, {Key}}).
+    send_to_one(Bucket, Key, {get, ReqId, {Key}}).
 
-put(Key, Value) ->
+put(Bucket, Key, Value) ->
 	?LOG_INFO("simple_kv.put called key = ~p value = ~p", [Key, Value]),
     ReqId = make_ref(),
-    send_to_one(Key, {put, ReqId, {Key, Value}}).
+    send_to_one(Bucket, Key, {put, ReqId, {Key, Value}}).
 
-send_to_one(Key, Cmd) ->
-    DocIdx = riak_core_util:chash_key({?BUCKET, Key}),
+send_to_one(Bucket, Key, Cmd) ->
+    DocIdx = riak_core_util:chash_key({Bucket, Key}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, simple_kv),
     [{IndexNode, _Type}] = PrefList,
+    ?LOG_INFO("simple_kv.send_to_one called IndexNode = ~p", [IndexNode]),
     riak_core_vnode_master:sync_spawn_command(IndexNode, Cmd, simple_kv_vnode_master).

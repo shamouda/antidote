@@ -49,6 +49,9 @@
 
 -define(SOME_CONST, 3).
 
+-define(BUCKET, test_utils:bucket(simple_kv_bucket)).
+
+
 init_per_suite(Config) ->
 	Suite = ?MODULE,
     ct:pal("[~p]", [Suite]),
@@ -75,11 +78,12 @@ simple_kv_test(Config) ->
     [Node1, Node2, Node3] = Cluster,
     ct:pal("Cluster ~p ~p ~p", [Node1, Node2, Node3]),
 	
+	Bucket = ?BUCKET,
     Key1 = key1,
     Value1 = value1,
-    GetResult0 = rpc:call(Node2, simple_kv, put, [Key1, Value1]),
-    GetResult = rpc:call(Node1, simple_kv, get, [Key1]),
-    ct:pal("GetResult ~p", [GetResult]),
+    rpc:call(Node1, simple_kv, put, [Bucket, Key1, Value1]),
+    GetResult = rpc:call(Node1, simple_kv, get, [Bucket, Key1]),
+    ?assertMatch({_Request,{result,Value1}}, GetResult),
 
 	ct:pal("intra-DC replication test passed.", []),
     pass.
