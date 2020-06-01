@@ -88,6 +88,7 @@ init(_Args) ->
 
     IntraDcLeaderElector = ?CHILD(intra_dc_leader_elector, worker, []),
 	IntraDcReplVnode = ?VNODE(intra_dc_log_replication_vnode_master, intra_dc_log_replication_vnode),
+	SimpleKVVnode = ?VNODE(simple_kv_vnode_master, simple_kv_vnode),
 
     MetaDataManagerSup = {meta_data_manager_sup,
                           {meta_data_manager_sup, start_link, [stable_time_functions]},
@@ -137,5 +138,6 @@ init(_Args) ->
        PbSup,
        AntidoteStats,
        IntraDcLeaderElector,
-       IntraDcReplVnode
+       IntraDcReplVnode,
+       SimpleKVVnode
        ]}}.

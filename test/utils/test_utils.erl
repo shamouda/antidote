@@ -134,6 +134,8 @@ start_node(Name, Config) ->
             ok = rpc:call(Node, application, set_env, [riak_core, platform_data_dir, filename:join([NodeWorkingDir, Node, "data"])]),
             ok = rpc:call(Node, application, set_env, [riak_core, schema_dirs, [AntidoteFolder ++ "/_build/default/rel/antidote/lib/"]]),
 
+			%% intra-dc replication factor -- FIXME: this still does not set the proper value in the test cases!!
+			ok = rpc:call(Node, application, set_env, [antidote, intra_dc_replicas, 3]),
 
             %% PORTS
             Port = web_ports(Name),
@@ -277,6 +279,9 @@ web_ports(dev1) -> 10015;
 web_ports(dev2) -> 10025;
 web_ports(dev3) -> 10035;
 web_ports(dev4) -> 10045;
+web_ports(dev5) -> 10055;
+web_ports(dev6) -> 10065;
+web_ports(dev7) -> 10075;
 web_ports(clusterdev1) -> 10115;
 web_ports(clusterdev2) -> 10125;
 web_ports(clusterdev3) -> 10135;

@@ -76,6 +76,9 @@ start(_StartType, _StartArgs) ->
             ok = riak_core:register([{vnode_module, intra_dc_log_replication_vnode}]),
             ok = riak_core_node_watcher:service_up(logreplication, self()),
 
+			ok = riak_core:register([{vnode_module, simple_kv_vnode}]),
+            ok = riak_core_node_watcher:service_up(simple_kv, self()),
+			
             ok = riak_core_ring_events:add_guarded_handler(antidote_ring_event_handler, []),
             ok = riak_core_node_watcher_events:add_guarded_handler(antidote_node_event_handler, []),
 
