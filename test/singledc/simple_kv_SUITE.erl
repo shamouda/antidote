@@ -40,7 +40,8 @@
 
 %% tests
 -export([
-    simple_kv_test/1
+    simple_kv_test/1,
+    simple_2pc_test/1
 ]).
 
 -include_lib("common_test/include/ct.hrl").
@@ -70,7 +71,8 @@ end_per_testcase(Name, _) ->
     ok.
 
 all() -> [
-    simple_kv_test
+    simple_kv_test,
+    simple_2pc_test
 ].
  
 simple_kv_test(Config) ->
@@ -81,9 +83,16 @@ simple_kv_test(Config) ->
 	Bucket = ?BUCKET,
     Key1 = key1,
     Value1 = value1,
-    rpc:call(Node1, simple_kv, put, [Bucket, Key1, Value1]),
+    rpc:call(Node2, simple_kv, put, [Bucket, Key1, Value1]),
     GetResult = rpc:call(Node1, simple_kv, get, [Bucket, Key1]),
     ?assertMatch({_Request,{result,Value1}}, GetResult),
 
 	ct:pal("intra-DC replication test passed.", []),
     pass.
+    
+%%LAST THING, this server call did not work.    
+simple_2pc_test(_Config) ->
+	{ok, Pid} = sim2pc_statem_sup:start_fsm(),
+	Param1 = 1,
+    gen_statem:call(Pid, {start_tx, Param1}),
+	pass.
