@@ -71,7 +71,7 @@ end_per_testcase(Name, _) ->
     ok.
 
 all() -> [
-    simple_kv_test,
+    %%simple_kv_test,
     simple_2pc_test
 ].
  
@@ -87,12 +87,13 @@ simple_kv_test(Config) ->
     GetResult = rpc:call(Node1, simple_kv, get, [Bucket, Key1]),
     ?assertMatch({_Request,{result,Value1}}, GetResult),
 
-	ct:pal("intra-DC replication test passed.", []),
+	ct:pal("testing get and set passed.", []),
     pass.
     
-%%LAST THING, this server call did not work.    
 simple_2pc_test(_Config) ->
-	{ok, Pid} = sim2pc_statem_sup:start_fsm(),
+%%	{ok, Pid} = sim2pc_statem_sup:start_fsm(),
+    {ok, Pid} = sim2pc_statem:start_link(),
 	Param1 = 1,
-    gen_statem:call(Pid, {start_tx, Param1}),
+	gen_statem:call(Pid, {start_tx, Param1}),
 	pass.
+

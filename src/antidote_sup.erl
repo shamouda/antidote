@@ -68,6 +68,11 @@ init(_Args) ->
                             permanent, 5000, supervisor,
                             [clockSI_interactive_coord_sup]},
 
+    Sim2PCSup =  { sim2pc_statem_sup,
+                   {sim2pc_statem_sup, start_link, []},
+                   permanent, 5000, supervisor,
+                   [sim2pc_statem_sup]},
+                            
     MaterializerMaster = {materializer_vnode_master,
                           {riak_core_vnode_master,  start_link,
                            [materializer_vnode]},
@@ -121,6 +126,7 @@ init(_Args) ->
        LoggingMaster,
        ClockSIMaster,
        ClockSIiTxCoordSup,
+       Sim2PCSup,
        MaterializerMaster,
        ZMQContextManager,
        InterDcPub,
