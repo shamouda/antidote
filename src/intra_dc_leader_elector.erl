@@ -111,9 +111,11 @@ handle_call(_Info, _From, State) ->
     {reply, error, State}.
 
 handle_cast(ring_changed, State) ->
+	?LOG_INFO("Leader elector received ring_changed signal", []),
 	Replicas = application:get_env(antidote, intra_dc_replicas, ?DEFAULT_REPLICAS),
     {noreply, recompute_groups(Replicas, State)};
 handle_cast({heartbeat, Node}, State = #state{downed = Downed, partitions = Partitions}) ->
+	?LOG_INFO("Leader elector here ~p received heartbeat signal from  ~p", [node(), Node]),
     case lists:member(Node, Downed) of
         true ->
             NDowned = Downed -- [Node],
@@ -180,9 +182,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%% Private
 
 run_heartbeat() ->
+	?LOG_INFO("Leader elector triggering heartbeat from node ~p", [node()]),
     gen_server:cast({global, generate_server_name(node())}, run_heartbeat).
 
 run_failure(Node) ->
+	?LOG_INFO("Leader elector received notification of node failure ~p", [Node]),
     gen_server:cast({global, generate_server_name(node())}, {run_failure, Node}).
 
 get_downed() ->
@@ -190,6 +194,7 @@ get_downed() ->
 
 %% Creates the initial replication groups for a replication factor of N
 recompute_groups(N, State = #state{downed = Downed}) ->
+	?LOG_INFO("Recomputing replication groups", []),
     {ok, Ring} = riak_core_ring_manager:get_my_ring(),
     Cluster = riak_core_ring:all_members(Ring),
     NN = case length(Cluster) < N of
@@ -230,14 +235,14 @@ del_heartbeat_timer(State = #state{heartbeat_timer = T}) ->
     _ = timer:cancel(T),
     State#state{heartbeat_timer = none}.
 
-set_heartbeat_timer(State = #state{cluster = Cluster}) when length(Cluster) < 5 ->
+set_heartbeat_timer(State = #state{cluster = Cluster}) when length(Cluster) < 3 ->
     State;
 set_heartbeat_timer(State) ->
     S1 = del_heartbeat_timer(State),
     {ok, NT} = timer:apply_after(?HEARTBEAT_TIMER, intra_dc_leader_elector, run_heartbeat, []),
     S1#state{heartbeat_timer = NT}.
 
-set_failure_timers(State = #state{cluster = Cluster}) when length(Cluster) < 5 ->
+set_failure_timers(State = #state{cluster = Cluster}) when length(Cluster) < 3 ->
     State;
 set_failure_timers(State = #state{cluster = Cluster, failure_timers = F}) ->
     maps:map(fun(_K, V) ->
